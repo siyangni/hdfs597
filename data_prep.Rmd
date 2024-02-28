@@ -1,0 +1,81 @@
+---
+title: "Data Preperation"
+author: "Siyang Ni"
+date: "2024-02-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Description
+
+The dataset is from a longgitudinal social survey in the UK called the "Millennium Cohort Study" (MCS). The MCS follows the lives of around 19,000 young people born in England, Scotland, Wales, and Northern Ireland in 2000-02. 
+
+MCS provides multiple measures of the cohort members’ physical, socio-emotional, cognitive and behavioral development over time, as well as detailed information on their daily life, behavior and experiences. Alongside this, rich information on economic circumstances, parenting, relationships and family life is available from both resident parents.
+
+Currently, the MCS have seven waves available to researchers. The first wave of survey was taken at the year 2001, when respondents were nine-month old. The seventh wave survey was taken at 2018, when the respondents were seventeen-year-old.   
+
+
+## Tasks
+
+We will conduct the following task:
+
+1. Merge the seven waves of data.
+2. Provide a general description of the contents of your sample.
+3. Identify issues that may need to be addressed in later analyses.
+4. Exploratory data visualization 
+5. Some very basic exploratory data analysis
+
+
+## Loading and Merging 
+
+```{r}
+
+# install.packages('pacman')
+# Pacman is an efficient R package manager, works like APT in Debian
+library(pacman) 
+
+# For merging we need haven and dplyrgit config --global user.email "youremail@domain.com"
+pacman::p_load(haven, dplyr)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
