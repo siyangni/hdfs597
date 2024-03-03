@@ -183,7 +183,7 @@ merged_data <- purrr::reduce(data_frames_list, full_join, by = "mcsid")
 A quick look shows we have a very large dataset with 19,243 rows and 18,816 columns, and also many missing cases. This is expected for a panel data that span from when the respondents were nine-month-old to seventeen-year-old.
 
 ```{r}
-## Load the merged dateset\
+## Load the merged dateset
 merged_data <- readRDS(file = "/home/freeyang/research_data/mcs/merging/merged_dataset.rds")
 
 ## Summarize the data
@@ -199,7 +199,7 @@ cat("Total Missing Values:", total_missing_values, "\n")
 Our main target variable is adolescent aggressive behaviors. We look at these variables in each waves:
 
 ```{r}
-# Show frequency distribution for variablrs measuring aggression at age 17
+# Show frequency distribution for variables measuring aggression at age 17
 aggg_7 <- c("gpsdfb00", "gchitt00", "gcwepn00", "gcsdql00")
 
 freq_tables <- lapply(merged_data[aggg_7], table)
@@ -211,6 +211,45 @@ lapply(names(freq_tables), function(x) {
 ```
 
 
+```{r}
+# Package for label
+pacman::p_load(labelled, epiDisplay)
+
+# Function to apply the recoding based on specific rules
+recode_var <- function(var, rules) {
+  case_when(
+    var %in% rules$from ~ rules$to[match(var, rules$from)],
+    TRUE ~ NA_real_  # Default case to NA for unspecified values
+  )
+}
+
+# Recoding for each variable
+df <- merged_data %>%
+  dplyr::select(gpsdfb00, gchitt00, gcwepn00, gcsdql00) %>% 
+  mutate(
+    agr7_fig = recode_var(gpsdfb00, tibble(from = c(-1, 4, 1, 2, 3), to = c(NA, NA, 0, 1, 2))),
+    agr7_hit = recode_var(gchitt00, tibble(from = c(3, 4, 5, 2, 1), to = c(NA, NA, NA, 0, 1))),
+    agr7_wepn = recode_var(gcwepn00, tibble(from = c(3, 4, 5, 2, 1), to = c(NA, NA, NA, 0, 1))),
+    agr7_srfig = recode_var(gcsdql00, tibble(from = c(-9, -1, 1, 2, 3), to = c(NA, NA, 0, 1, 2)))
+  ) %>% 
+  dplyr::select(agr7_fig, agr7_hit, agr7_wepn, agr7_srfig) %>% 
+  set_variable_labels(
+    agr7_fig = "Fight with others",
+    agr7_hit = "Pushed or shoved/hit/slapped/punched someone",
+    agr7_wepn = "Used or hit someone with a weapon",
+    agr7_srfig = "I fight a lot"
+  )
+
+  
+# Variables to analyze
+agr7 <- c("agr7_fig", "agr7_hit", "agr7_wepn", "agr7_srfig")
+
+# Apply tab1 to each variable directly, without additional function or label
+lapply(agr7, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df[, var_name], main = var_name)
+})
+```
 
 
 
