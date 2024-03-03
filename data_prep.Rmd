@@ -28,10 +28,17 @@ We will conduct the following task:
 4. Exploratory data visualization 
 5. Some very basic exploratory data analysis
 
+Computing Environment: 
+
+-Program: R 4.3.2
+-IDE: R Studio Server 2023.12.1+402 "Ocean Storm" Release 
+-OS: Ubuntu 22.04.4 LTS through WSL2 (x86_64-pc-linux-gnu)
+
 
 ## Loading and Merging 
 
 ```{r}
+setwd("/home/freeyang/research/hdfs597")
 
 # install.packages('pacman')
 # Pacman is an efficient R package manager, works like APT in Debian
@@ -39,8 +46,168 @@ library(pacman)
 
 # For merging we need haven and dplyrgit config --global user.email "youremail@domain.com"
 pacman::p_load(haven, dplyr)
+```
+
+```{r}
+# Load all waves
+
+## Base directory prefix
+base_dir <- "/home/freeyang/research_data/mcs"
+
+# Reading each wave, all column names to lowercase, filter out twins and triplets, keep only main caregivers. 
+
+# Wave 1 Parent Interview
+wave1_parent_interview <- read_dta(file.path(base_dir, "MCS 1/stata11/mcs1_parent_interview.dta")) %>%
+  rename_with(tolower)
+
+# Wave 2 Child Assessment
+wave2_child_assessment <- read_dta(file.path(base_dir, "MCS 2/stata11_se/mcs2_child_assessment_data.dta")) %>%
+  rename_with(tolower) %>%
+  filter(bhcnum00 == 1)
+
+# Wave 2 Parent Interview
+wave2_parent_interview <- read_dta(file.path(base_dir, "MCS 2/stata11_se/mcs2_parent_interview.dta")) %>%
+  rename_with(tolower)
+
+# Wave 3 Child Assessment
+wave3_child_assessment <- read_dta(file.path(base_dir, "MCS 3/stata11_se/mcs3_child_assessment_data.dta")) %>%
+  rename_with(tolower) %>%
+  filter(chcnum00 == 1)
+
+# Wave 3 Parent Interview
+wave3_parent_interview <- read_dta(file.path(base_dir, "MCS 3/stata11_se/mcs3_parent_interview.dta")) %>%
+  rename_with(tolower)
+
+# Wave 4 Parent Interview
+wave4_parent_interview <- read_dta(file.path(base_dir, "MCS 4/stata11_se/mcs4_parent_interview.dta")) %>%
+  rename_with(tolower)
+
+# Wave 4 Child Assessment
+wave4_child_assessment <- read_dta(file.path(base_dir, "MCS 4/stata11_se/mcs4_cm_assessment.dta")) %>%
+  rename_with(tolower) %>%
+  filter(dccnum00 == 1)
+
+# Wave 5 CM Assessment
+wave5_cm_assessment <- read_dta(file.path(base_dir, "MCS 5/stata11/mcs5_cm_cognitive_assessment.dta")) %>%
+  rename_with(tolower) %>%
+  filter(ecnum00 == 1)
+
+# Wave 5 CM Interview
+wave5_cm_interview <- read_dta(file.path(base_dir, "MCS 5/stata11/mcs5_cm_interview.dta")) %>%
+  rename_with(tolower) %>%
+  filter(ecnum00 == 1)
+
+# Wave 5 Parent CM Interview
+wave5_parent_cm_interview <- read_dta(file.path(base_dir, "MCS 5/stata11/mcs5_parent_cm_interview.dta")) %>%
+  rename_with(tolower) %>%
+  filter(ecnum00 == 1, epnum00 == 1)
+
+# Wave 5 Child Derived
+wave5_child_derived <- read_dta(file.path(base_dir, "MCS 5/stata11/mcs5_cm_derived.dta")) %>%
+  rename_with(tolower) %>%
+  filter(ecnum00 == 1)
+
+# Wave 6 CM Interview
+wave6_cm_interview <- read_dta(file.path(base_dir, "MCS 6/stata11/mcs6_cm_interview.dta")) %>%
+  rename_with(tolower) %>%
+  filter(fcnum00 == 1)
+
+# Wave 6 Parent CM Interview (Main)
+wave6_parent_cm_interview <- read_dta(file.path(base_dir, "MCS 6/stata11/mcs6_parent_cm_interview.dta")) %>%
+  rename_with(tolower) %>%
+  filter(fpnum00 == 1, fcnum00 == 1)
+
+# Wave 6 Parent Derived
+wave6_parent_derived <- read_dta(file.path(base_dir, "MCS 6/stata11/mcs6_parent_derived.dta")) %>%
+  rename_with(tolower) %>%
+  filter(fpnum00 == 1)
+
+# Wave 6 Child Derived
+wave6_child_derived <- read_dta(file.path(base_dir, "MCS 6/stata11/mcs6_cm_derived.dta")) %>%
+  rename_with(tolower) %>%
+  filter(fcnum00 == 1)
+
+# Wave 7 CM Interview
+wave7_cm_interview <- read_dta(file.path(base_dir, "MCS 7/stata13/mcs7_cm_interview_onlyCM1.dta")) %>%
+  rename_with(tolower)
+
+# Wave 7 Parent CM Interview
+wave7_parent_cm_interview <- read_dta(file.path(base_dir, "MCS 7/stata13/mcs7_parent_cm_interview.dta")) %>%
+  rename_with(tolower) %>%
+  filter(gpnum00 == 1, gcnum00 == 1)
+
+# Wave 7 CM Derived
+wave7_cm_derived <- read_dta(file.path(base_dir, "MCS 7/stata13/mcs7_cm_derived_onlyCM1.dta")) %>%
+  rename_with(tolower)
+```
+
+```{r}
+# Merge all waves
+
+## purrr package for merging
+pacman::p_load(purrr)
+
+## Store all waves in a list
+data_frames_list <- list(
+  wave1_parent_interview,
+  wave2_child_assessment,
+  wave2_parent_interview,
+  wave3_child_assessment,
+  wave3_parent_interview,
+  wave4_parent_interview,
+  wave4_child_assessment,
+  wave5_cm_assessment,
+  wave5_cm_interview,
+  wave5_parent_cm_interview,
+  wave5_child_derived,
+  wave6_cm_interview,
+  wave6_parent_cm_interview,
+  wave6_parent_derived,
+  wave6_child_derived,
+  wave7_cm_interview,
+  wave7_parent_cm_interview,
+  wave7_cm_derived
+)
+
+## Use reduce from purrr to merge all waves 1 by 1 
+merged_data <- purrr::reduce(data_frames_list, full_join, by = "mcsid")
+
+## Save the merged dataset as an RDS file
+### (Uncomment when needed)
+#(merged_data, file = "/home/freeyang/research_data/mcs/merging/merged_dataset.rds")
+```
 
 
+## Data Exploration
+
+A quick look shows we have a very large dataset with 19,243 rows and 18,816 columns, and also many missing cases. This is expected for a panel data that span from when the respondents were nine-month-old to seventeen-year-old.
+
+```{r}
+## Load the merged dateset\
+merged_data <- readRDS(file = "/home/freeyang/research_data/mcs/merging/merged_dataset.rds")
+
+## Summarize the data
+dim(merged_data)
+head(merged_data[1:5, 1:10])
+
+## Missing Values
+total_missing_values <- sum(is.na(merged_data))
+cat("Total Missing Values:", total_missing_values, "\n")
+```
+
+
+Our main target variable is adolescent aggressive behaviors. We look at these variables in each waves:
+
+```{r}
+# Show frequency distribution for variablrs measuring aggression at age 17
+aggg_7 <- c("gpsdfb00", "gchitt00", "gcwepn00", "gcsdql00")
+
+freq_tables <- lapply(merged_data[aggg_7], table)
+
+lapply(names(freq_tables), function(x) {
+  cat("\nFrequency table for", x, ":\n")
+  print(freq_tables[[x]])
+})
 ```
 
 
