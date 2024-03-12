@@ -48,7 +48,7 @@ library(pacman)
 pacman::p_load(haven, dplyr)
 ```
 
-```{r}
+```{r, eval=FALSE}
 # Load all waves
 
 ## Base directory prefix
@@ -141,7 +141,7 @@ wave7_cm_derived <- read_dta(file.path(base_dir, "MCS 7/stata13/mcs7_cm_derived_
   rename_with(tolower)
 ```
 
-```{r}
+```{r, eval=FALSE}
 # Merge all waves
 
 ## purrr package for merging
@@ -174,7 +174,7 @@ merged_data <- purrr::reduce(data_frames_list, full_join, by = "mcsid")
 
 ## Save the merged dataset as an RDS file
 ### (Uncomment when needed)
-#(merged_data, file = "/home/freeyang/research_data/mcs/merging/merged_dataset.rds")
+#saveRDS(merged_data, file = "/home/freeyang/research_data/mcs/merging/merged_dataset.rds")
 ```
 
 
@@ -196,7 +196,7 @@ cat("Total Missing Values:", total_missing_values, "\n")
 ```
 
 
-Our main target variable is adolescent aggressive behaviors. We look at these variables in each waves:
+Our main target variable is adolescent aggressive behaviors. We look at these variables in each waves, strating with the most recent wave 7 (age 17):
 
 ```{r}
 # Show frequency distribution for variables measuring aggression at age 17
@@ -210,9 +210,10 @@ lapply(names(freq_tables), function(x) {
 })
 ```
 
+In the following code chunk, we recode these variables by comining missing value categories and adding variable labels. Finally, we show the frequency of each variables again. 
 
 ```{r}
-# Package for label
+# Package for label and the tab1 function
 pacman::p_load(labelled, epiDisplay)
 
 # Function to apply the recoding based on specific rules
@@ -223,8 +224,8 @@ recode_var <- function(var, rules) {
   )
 }
 
-# Recoding for each variable
-df <- merged_data %>%
+# Recoding for each variables
+df1 <- merged_data %>%
   dplyr::select(gpsdfb00, gchitt00, gcwepn00, gcsdql00) %>% 
   mutate(
     agr7_fig = recode_var(gpsdfb00, tibble(from = c(-1, 4, 1, 2, 3), to = c(NA, NA, 0, 1, 2))),
@@ -233,55 +234,714 @@ df <- merged_data %>%
     agr7_srfig = recode_var(gcsdql00, tibble(from = c(-9, -1, 1, 2, 3), to = c(NA, NA, 0, 1, 2)))
   ) %>% 
   dplyr::select(agr7_fig, agr7_hit, agr7_wepn, agr7_srfig) %>% 
-  set_variable_labels(
+  labelled::set_variable_labels(
     agr7_fig = "Fight with others",
     agr7_hit = "Pushed or shoved/hit/slapped/punched someone",
     agr7_wepn = "Used or hit someone with a weapon",
     agr7_srfig = "I fight a lot"
   )
-
   
 # Variables to analyze
 agr7 <- c("agr7_fig", "agr7_hit", "agr7_wepn", "agr7_srfig")
 
-# Apply tab1 to each variable directly, without additional function or label
+# A quick look at each variable
 lapply(agr7, function(var_name) {
   cat("\nVariable:", var_name, "\n")
-  tab1(df[, var_name], main = var_name)
+  tab1(df1[, var_name], main = var_name)
 })
 ```
 
 
+Now, we look at variables for adolescent aggresive behaviors in wave 6 (age 14).
 
+```{r}
+# Show frequency distribution for variables measuring aggression at age 14
+aggg_6 <- c("fpsdfb00", "fchitt00", "fcwepn00", "fcbulp00", "fcpckp00")
 
+freq_tables <- lapply(merged_data[aggg_6], table)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+lapply(names(freq_tables), function(x) {
+  cat("\nFrequency table for", x, ":\n")
+  print(freq_tables[[x]])
+})
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# Recoding for each variables
+df2 <- merged_data %>% 
+  mutate(
+    agr6_fig = recode_var(fpsdfb00, tibble(from = c(-1, -9, 1, 2, 3), to = c(NA, NA, 0, 1, 2))),
+    agr6_hit = recode_var(fchitt00, tibble(from = c(-9, -8, -1, 2, 1), to = c(NA, NA, NA, 0, 1))),
+    agr6_wepn = recode_var(fcwepn00, tibble(from = c(-9, -8, -1, 2, 1), to = c(NA, NA, NA, 0, 1))),
+    agr6_hps = recode_var(fcbulp00, tibble(from = c(-9, -8, -1, 7, 6, 5, 4, 3, 2, 1), to = c(NA, NA, NA, NA, 0, 1, 2, 3, 4, 5))),
+    agr6_hpc = recode_var(fcpckp00, tibble(from = c(-9, -8, -1, 6, 5, 4, 3, 2, 1), to = c(NA, NA, NA, 0, 1, 2, 3, 4, 5))),
+  ) %>% 
+  labelled::set_variable_labels(
+    agr6_fig = "Fight with others",
+    agr6_hit = "Pushed or shoved/hit/slapped/punched someone",
+    agr6_wepn = "Used or hit someone with a weapon",
+    agr6_hps = "Hurt or pick on siblings",
+    agr6_hpc = "Hurt or pick on other children") %>%
+  dplyr::select(agr6_fig, agr6_hit, agr6_wepn, agr6_hps, agr6_hpc)
+  
+# Variables to analyze
+agr6 <- c("agr6_fig", "agr6_hit", "agr6_wepn", "agr6_hps", "agr6_hpc")
+
+# A quick look at each variable
+lapply(agr6, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df2[, var_name], main = var_name)
+})
+```
+
+
+Following the same logic, we take a look at the variables in wave 5 (age 11)
+
+```{r}
+# Aggression variables at age 14
+aggg_5 <- c("epsdfb00", "ecq55x00", "ecq57x00")
+
+freq_tables <- lapply(merged_data[aggg_5], table)
+
+# Print frequency tables for each aggression variable
+lapply(names(freq_tables), function(x) {
+  cat("\nFrequency table for", x, ":\n")
+  print(freq_tables[[x]])
+})
+```
+
+And then recode the three variables measuring adolescent aggression at wave 5 (age 11).
+
+```{r}
+df3 <- merged_data %>%
+  dplyr::select(epsdfb00, ecq55x00, ecq57x00) %>%
+  mutate(
+    # Recoding 'fight with others'
+    agr5_fig = recode_var(epsdfb00, tibble(from = c(-1, 4, 1, 2, 3), to = c(NA, NA, 0, 1, 2))),
+    # Recoding 'hurt or pick on siblings'
+    agr5_hps = recode_var(ecq55x00, tibble(from = c(-8, 7, 6, 5, 4, 3, 2, 1), to = c(NA, NA, 0, 1, 2, 3, 4, 5))),
+    # Recoding 'hurt or pick on other children'
+    agr5_hpc = recode_var(ecq57x00, tibble(from = c(-8, 6, 5, 4, 3, 2, 1), to = c(NA, 0, 1, 2, 3, 4, 5)))
+  ) %>%
+  # Selecting the newly recoded variables for further analysis or inspection
+  dplyr::select(agr5_fig, agr5_hps, agr5_hpc) %>% 
+  set_variable_labels(
+  agr5_fig = "Fight with others",
+  agr5_hps = "Hurt or pick on siblings",
+  agr5_hpc = "Hurt or pick on other children"
+)
+
+# Show all variable frequency 
+agr5 <- c("agr5_fig", "agr5_hps", "agr5_hpc")
+
+lapply(agr5, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df3[, var_name], main = var_name)
+})
+
+```
+
+Now, combine all the adolescent aggression variables into one dataframe:
+
+```{r}
+df_aggr <- bind_rows(df1, df2, df3)
+# Check dimensions
+dim(df_aggr)
+```
+
+
+We ask how self-control affects adolescent aggressive behaviors. So, we need to look at self-control variables. In our study, we measure self-control from two dimensions: impulsivivity and unhealthy risk-taking behaviors. We look at hese variables in each wave. 
+
+We start by looking at wave 7 (age 17)
+
+```{r}
+df4 <- merged_data %>%
+  mutate(
+    imp7_tem = case_when(
+      gpsdtt00 %in% c(-1, 4) ~ NA_real_,
+      gpsdtt00 == 1 ~ 0,
+      gpsdtt00 == 2 ~ 1,
+      gpsdtt00 == 3 ~ 2
+    ),
+    imp7_res = case_when(
+      gpsdro00 %in% c(-1, 4) ~ NA_real_,
+      gpsdro00 == 1 ~ 0,
+      gpsdro00 == 2 ~ 1,
+      gpsdro00 == 3 ~ 2
+    ),
+    imp7_fid = case_when(
+      gpsdfs00 %in% c(-1, 4) ~ NA_real_,
+      gpsdfs00 == 1 ~ 0,
+      gpsdfs00 == 2 ~ 1,
+      gpsdfs00 == 3 ~ 2
+    ),
+    imp7_dis = case_when(
+      gpsddc00 %in% c(-1, 4) ~ NA_real_,
+      gpsddc00 == 1 ~ 0,
+      gpsddc00 == 2 ~ 1,
+      gpsddc00 == 3 ~ 2
+    ),
+    imp7_thi = case_when(
+      gpsdst00 %in% c(-1, 4) ~ NA_real_,
+      gpsdst00 == 1 ~ 2,
+      gpsdst00 == 2 ~ 1,
+      gpsdst00 == 3 ~ 0
+    ),
+    imp7_tas = case_when(
+      gpsdte00 %in% c(-1, 4) ~ NA_real_,
+      gpsdte00 == 1 ~ 2,
+      gpsdte00 == 2 ~ 1,
+      gpsdte00 == 3 ~ 0
+    ),
+    risk7_lie = case_when(
+      gpsdoa00 %in% c(-1, 4) ~ NA_real_,
+      gpsdoa00 == 1 ~ 0,
+      gpsdoa00 == 2 ~ 1,
+      gpsdoa00 == 3 ~ 2
+    ),
+    risk7_ste = case_when(
+      gpsdcs00 %in% c(-1, 4) ~ NA_real_,
+      gpsdcs00 == 1 ~ 0,
+      gpsdcs00 == 2 ~ 1,
+      gpsdcs00 == 3 ~ 2
+    ),
+    risk7_obe = case_when(
+      gpsdor00 %in% c(-1, 4) ~ NA_real_,
+      gpsdor00 == 1 ~ 2,
+      gpsdor00 == 2 ~ 1,
+      gpsdor00 == 3 ~ 0
+    ),
+    risk7_shl = case_when(
+      gcstol00 %in% c(3, 4, 5) ~ NA_real_,
+      gcstol00 == 2 ~ 0,
+      gcstol00 == 1 ~ 1
+    ),
+    risk7_wpp = case_when(
+      gcspry00 %in% c(3, 4, 5) ~ NA_real_,
+      gcspry00 == 2 ~ 0,
+      gcspry00 == 1 ~ 1
+    ),
+    risk7_smk = case_when(
+      gcsmok00 %in% c(7, 8, 9) ~ NA_real_,
+      gcsmok00 == 1 ~ 0,
+      gcsmok00 %in% c(2, 3, 4, 5, 6) ~ 1
+    ),
+    risk7_drk = case_when(
+      gcalcd00 %in% c(3, 4, 5) ~ NA_real_,
+      gcalcd00 == 2 ~ 0,
+      gcalcd00 == 1 ~ 1
+    ),
+    risk7_damg = case_when(
+      gcdamg00 %in% c(3, 4, 5) ~ NA_real_,
+      gcdamg00 == 2 ~ 0,
+      gcdamg00 == 1 ~ 1
+    )
+  ) %>% 
+  dplyr::select(imp7_tem, imp7_res, imp7_fid, imp7_dis, imp7_thi, imp7_tas, risk7_lie, risk7_ste, risk7_obe, risk7_shl, risk7_wpp, risk7_smk, risk7_drk, risk7_damg) %>% 
+  labelled::set_variable_labels(
+    imp7_tem = "Tempur Tantrums",
+    imp7_res = "Restless",
+    imp7_fid = "Fidgeting",
+    imp7_dis = "Easily Distracted",
+    imp7_thi = "Think Before Act (Reverse Scale)",
+    imp7_tas = "Sees Task Through to the End (Reverse Scale)",
+    risk7_lie = "Lie or Cheat",
+    risk7_ste = "Steal",
+    risk7_obe = "Generally Obedient (Reverse Scale)",
+    risk7_shl = "Shoplifting",
+    risk7_wpp = "Write/Paint in Public Places",
+    risk7_smk = "Underage Smoking",
+    risk7_drk = "Underage Drinking",
+    risk7_damg = "Damage Something That Doesn't Belong to Them"
+  )
+
+
+# Show descriptive statistics 
+
+self_control7 <- c("imp7_tem", "imp7_res", "imp7_fid", "imp7_dis", "imp7_thi", "imp7_tas", "risk7_lie", "risk7_ste", "risk7_obe", "risk7_shl", "risk7_wpp", "risk7_smk", "risk7_drk", "risk7_damg")
+
+lapply(self_control7, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df4[, var_name], main = var_name)
+})
+
+```
+
+
+We do the same for wave 6 (age 14):
+
+```{r}
+df5 <- merged_data %>%
+  mutate(
+    # Self-Control Variables
+    imp6_tem = case_when(
+      fpsdtt00 %in% c(-9, -1) ~ NA_real_,
+      fpsdtt00 == 1 ~ 0,
+      fpsdtt00 == 2 ~ 1,
+      fpsdtt00 == 3 ~ 2
+    ),
+    imp6_res = case_when(
+      fpsdro00 %in% c(-9, -1) ~ NA_real_,
+      fpsdro00 == 1 ~ 0,
+      fpsdro00 == 2 ~ 1,
+      fpsdro00 == 3 ~ 2
+    ),
+    imp6_fid = case_when(
+      fpsdfs00 %in% c(-9, -1) ~ NA_real_,
+      fpsdfs00 == 1 ~ 0,
+      fpsdfs00 == 2 ~ 1,
+      fpsdfs00 == 3 ~ 2
+    ),
+    imp6_dis = case_when(
+      fpsddc00 %in% c(-9, -1) ~ NA_real_,
+      fpsddc00 == 1 ~ 0,
+      fpsddc00 == 2 ~ 1,
+      fpsddc00 == 3 ~ 2
+    ),
+    imp6_thi = case_when(
+      fpsdst00 %in% c(-9, -1) ~ NA_real_,
+      fpsdst00 == 1 ~ 2,
+      fpsdst00 == 2 ~ 1,
+      fpsdst00 == 3 ~ 0
+    ),
+    imp6_tas = case_when(
+      fpsdte00 %in% c(-9, -1) ~ NA_real_,
+      fpsdte00 == 1 ~ 2,
+      fpsdte00 == 2 ~ 1,
+      fpsdte00 == 3 ~ 0
+    ),
+    # Risk Taking Variables
+    risk6_lie = case_when(
+      fpsdoa00 %in% c(-9, -1) ~ NA_real_,
+      fpsdoa00 == 1 ~ 0,
+      fpsdoa00 == 2 ~ 1,
+      fpsdoa00 == 3 ~ 2
+    ),
+    risk6_ste = case_when(
+      fpsdcs00 %in% c(-9, -1) ~ NA_real_,
+      fpsdcs00 == 1 ~ 0,
+      fpsdcs00 == 2 ~ 1,
+      fpsdcs00 == 3 ~ 2
+    ),
+    risk6_obe = case_when(
+      fpsdor00 %in% c(-9, -1) ~ NA_real_,
+      fpsdor00 == 1 ~ 2,
+      fpsdor00 == 2 ~ 1,
+      fpsdor00 == 3 ~ 0
+    ),
+    risk6_shl = case_when(
+      fcstol00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcstol00 == 2 ~ 0,
+      fcstol00 == 1 ~ 1
+    ),
+    risk6_wpp = case_when(
+      fcspry00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcspry00 == 2 ~ 0,
+      fcspry00 == 1 ~ 1
+    ),
+    risk6_smk = case_when(
+      fcsmok00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcsmok00 == 1 ~ 0,
+      fcsmok00 %in% c(2, 3, 4, 5, 6) ~ 1
+    ),
+    risk6_drk = case_when(
+      fcalcd00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcalcd00 == 2 ~ 0,
+      fcalcd00 == 1 ~ 1
+    ),
+    risk6_rude = case_when(
+      fcrude00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcrude00 == 2 ~ 0,
+      fcrude00 == 1 ~ 1
+    ),
+    risk6_damg = case_when(
+      fcdamg00 %in% c(-9, -8, -1) ~ NA_real_,
+      fcdamg00 == 2 ~ 0,
+      fcdamg00 == 1 ~ 1
+    )
+  ) %>%
+   dplyr::select(imp6_tem, imp6_res, imp6_fid, imp6_dis, imp6_thi, imp6_tas, risk6_lie, risk6_ste, risk6_obe, risk6_shl, risk6_wpp, risk6_smk, risk6_drk, risk6_rude, risk6_damg) %>% 
+  labelled::set_variable_labels(
+    imp6_tem = "Tempur Tantrums",
+    imp6_res = "Restless",
+    imp6_fid = "Fidgeting",
+    imp6_dis = "Easily Distracted",
+    imp6_thi = "Think Before Act (Reverse Scale)",
+    imp6_tas = "Sees Task Through to the End (Reverse Scale)",
+    risk6_lie = "Lie or Cheat",
+    risk6_ste = "Steal",
+    risk6_obe = "Generally Obedient (Reverse Scale)",
+    risk6_shl = "Shoplifting",
+    risk6_wpp = "Write/Paint in Public Places",
+    risk6_smk = "Underage Smoking",
+    risk6_drk = "Underage Drinking",
+    risk6_rude = "Rude or Noisy in Public",
+    risk6_damg = "Damage Something That Doesn't Belong to Them"
+  )
+
+# Show descriptive statistics 
+self_control6 <- c("imp6_tem", "imp6_res", "imp6_fid", "imp6_dis", "imp6_thi", "imp6_tas","risk6_lie", "risk6_ste", "risk6_obe", "risk6_shl", "risk6_wpp", "risk6_smk", "risk6_drk", "risk6_rude", "risk6_damg")
+
+lapply(self_control6, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df5[, var_name], main = var_name)
+})
+```
+
+
+Now we do the same for wave 5:
+
+```{r}
+df6 <- merged_data %>%
+  mutate(
+    # Self-Control Variables
+    imp5_tem = case_when(
+      epsdtt00 %in% c(-1, 4) ~ NA_real_,
+      epsdtt00 == 1 ~ 0,
+      epsdtt00 == 2 ~ 1,
+      epsdtt00 == 3 ~ 2
+    ),
+    imp5_res = case_when(
+      epsdro00 %in% c(-1, 4) ~ NA_real_,
+      epsdro00 == 1 ~ 0,
+      epsdro00 == 2 ~ 1,
+      epsdro00 == 3 ~ 2
+    ),
+    imp5_fid = case_when(
+      epsdfs00 %in% c(-1, 4) ~ NA_real_,
+      epsdfs00 == 1 ~ 0,
+      epsdfs00 == 2 ~ 1,
+      epsdfs00 == 3 ~ 2
+    ),
+    imp5_dis = case_when(
+      epsddc00 %in% c(-1, 4) ~ NA_real_,
+      epsddc00 == 1 ~ 0,
+      epsddc00 == 2 ~ 1,
+      epsddc00 == 3 ~ 2
+    ),
+    imp5_thi = case_when(
+      epsdst00 %in% c(-1, 4) ~ NA_real_,
+      epsdst00 == 1 ~ 2,
+      epsdst00 == 2 ~ 1,
+      epsdst00 == 3 ~ 0
+    ),
+    imp5_tas = case_when(
+      epsdte00 %in% c(-1, 4) ~ NA_real_,
+      epsdte00 == 1 ~ 2,
+      epsdte00 == 2 ~ 1,
+      epsdte00 == 3 ~ 0
+    ),
+    # Risk Taking Variables
+    risk5_lie = case_when(
+      epsdoa00 %in% c(-1, 4) ~ NA_real_,
+      epsdoa00 == 1 ~ 0,
+      epsdoa00 == 2 ~ 1,
+      epsdoa00 == 3 ~ 2
+    ),
+    risk5_ste = case_when(
+      epsdcs00 %in% c(-1, 4) ~ NA_real_,
+      epsdcs00 == 1 ~ 0,
+      epsdcs00 == 2 ~ 1,
+      epsdcs00 == 3 ~ 2
+    ),
+    risk5_obe = case_when(
+      epsdor00 %in% c(-1, 4) ~ NA_real_,
+      epsdor00 == 1 ~ 2,
+      epsdor00 == 2 ~ 1,
+      epsdor00 == 3 ~ 0
+    ),
+    risk5_sch = case_when(
+      ecq45x00 == -8 ~ NA_real_,
+      ecq45x00 == 2 ~ 0,
+      ecq45x00 == 1 ~ 1
+    ),
+    risk5_shl = case_when(
+      ecq26x00 == -8 ~ NA_real_,
+      ecq26x00 == 2 ~ 0,
+      ecq26x00 == 1 ~ 1
+    ),
+    risk5_wpp = case_when(
+      ecq27x00 == -8 ~ NA_real_,
+      ecq27x00 == 2 ~ 0,
+      ecq27x00 == 1 ~ 1
+    ),
+    risk5_smk = case_when(
+      ecq59x00 == -8 ~ NA_real_,
+      ecq59x00 == 2 ~ 0,
+      ecq59x00 == 1 ~ 1
+    ),
+    risk5_drk = case_when(
+      ecq61x00 == -8 ~ NA_real_,
+      ecq61x00 == 2 ~ 0,
+      ecq61x00 == 1 ~ 1
+    ),
+    risk5_rude = case_when(
+      ecq25x00 == -8 ~ NA_real_,
+      ecq25x00 == 2 ~ 0,
+      ecq25x00 == 1 ~ 1
+    ),
+    risk5_damg = case_when(
+      ecq28x00 == -8 ~ NA_real_,
+      ecq28x00 == 2 ~ 0,
+      ecq28x00 == 1 ~ 1
+    )
+  ) %>%
+  dplyr::select(imp5_tem, imp5_res, imp5_fid, imp5_dis, imp5_thi, imp5_tas, risk5_lie, risk5_ste, risk5_obe, risk5_sch, risk5_shl, risk5_wpp, risk5_smk, risk5_drk, risk5_rude, risk5_damg) %>% 
+  labelled::set_variable_labels(
+    imp5_tem = "Tempur Tantrums",
+    imp5_res = "Restless",
+    imp5_fid = "Fidgeting",
+    imp5_dis = "Easily Distracted",
+    imp5_thi = "Think Before Act (Reverse Scale)",
+    imp5_tas = "Sees Task Through to the End (Reverse Scale)",
+    risk5_lie = "Lie or Cheat",
+    risk5_ste = "Steal",
+    risk5_obe = "Generally Obedient (Reverse Scale)",
+    risk5_sch = "Miss School",
+    risk5_shl = "Shoplifting",
+    risk5_wpp = "Write/Paint in Public Places",
+    risk5_smk = "Underage Smoking",
+    risk5_drk = "Underage Drinking",
+    risk5_rude = "Rude or Noisy in Public",
+    risk5_damg = "Damage Something That Doesn't Belong to Them"
+  )
+
+
+# Show frequency
+self_control5 <- c("imp5_tem", "imp5_res", "imp5_fid", "imp5_dis", "imp5_thi", "imp5_tas","risk5_lie", "risk5_ste", "risk5_obe", "risk5_sch", "risk5_shl", "risk5_wpp", "risk5_smk", "risk5_drk", "risk5_rude", "risk5_damg")
+
+
+lapply(self_control5, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  tab1(df6[, var_name], main = var_name)
+})
+```
+
+
+Now, let's merge all the self-contorl variables into one data frame:
+
+```{r}
+df_sc <- bind_rows(df4, df5, df6)
+# Check dimensions
+dim(df_sc)
+```
+
+
+Another concept we are interested in is parenting in childhood. In this study, we are especially interested in parents' behaviors of corrections when their children misbehave. In the following parts, we will look at parenting in wave 5 (age 11) and wave 4 (age 7).
+
+We begin by looking at variables measuring parenting at wave 5 (age 11): 
+
+```{r}
+df7 <- merged_data %>%
+  mutate(
+    par5_plwk = case_when(
+      epplwk00 %in% c(-8, -1) ~ NA_real_,
+      epplwk00 == 1 ~ 0,
+      epplwk00 == 2 ~ 1,
+      epplwk00 == 3 ~ 2,
+      epplwk00 == 4 ~ 3,
+      epplwk00 == 5 ~ 4
+    ),
+    par5_dibn = case_when(
+      epdibn00 %in% c(-1, 6) ~ NA_real_,
+      epdibn00 == 1 ~ 0,
+      epdibn00 == 2 ~ 1,
+      epdibn00 == 3 ~ 2,
+      epdibn00 == 4 ~ 3,
+      epdibn00 == 5 ~ 4
+    ),
+    par5_ditr = case_when(
+      epditr00 %in% c(-1, 6) ~ NA_real_,
+      epditr00 == 1 ~ 0,
+      epditr00 == 2 ~ 1,
+      epditr00 == 3 ~ 2,
+      epditr00 == 4 ~ 3,
+      epditr00 == 5 ~ 4
+    ),
+    par5_dire = case_when(
+      epdire00 %in% c(-1, 6) ~ NA_real_,
+      epdire00 == 1 ~ 0,
+      epdire00 == 2 ~ 1,
+      epdire00 == 3 ~ 2,
+      epdire00 == 4 ~ 3,
+      epdire00 == 5 ~ 4
+    )
+  ) %>% 
+  dplyr::select(par5_plwk, par5_dibn, par5_ditr, par5_dire) %>% 
+  labelled::set_variable_labels(
+  par5_plwk = "Unsupervised hours with friends",
+  par5_dibn = "Send to bedrooms when misbehaves",
+  par5_ditr = "Take away treats when misbehaves",
+  par5_dire = "Try to reason with her when misbehaves"
+)
+
+# Show frequency
+parenting5 <- c("par5_plwk", "par5_dibn", "par5_ditr", "par5_dire")
+
+lapply(parenting5, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  print(summary(df7[[var_name]]))
+  tab1(df7[, var_name], main = var_name)
+})
+
+```
+
+
+Now, we do the same for wave 4 (age 7)
+
+```{r}
+df8 <- merged_data %>%
+  mutate(
+    # Send to bedrooms when misbehaves
+    par4_dibn = case_when(
+      dmdibna0 %in% c(-9, -8, -1, 6) ~ NA_real_,
+      dmdibna0 == 1 ~ 0,
+      dmdibna0 == 2 ~ 1,
+      dmdibna0 == 3 ~ 2,
+      dmdibna0 == 4 ~ 3,
+      dmdibna0 == 5 ~ 4
+    ),
+    # Take away treats when misbehaves
+    par4_ditr = case_when(
+      dmditra0 %in% c(-9, -8, -1, 6) ~ NA_real_,
+      dmditra0 == 1 ~ 0,
+      dmditra0 == 2 ~ 1,
+      dmditra0 == 3 ~ 2,
+      dmditra0 == 4 ~ 3,
+      dmditra0 == 5 ~ 4
+    ),
+    # Try to reason with her when misbehaves
+    par4_dire = case_when(
+      dmdirea0 %in% c(-9, -8, -1, 6) ~ NA_real_,
+      dmdirea0 == 1 ~ 0,
+      dmdirea0 == 2 ~ 1,
+      dmdirea0 == 3 ~ 2,
+      dmdirea0 == 4 ~ 3,
+      dmdirea0 == 5 ~ 4
+    )
+  ) %>% dplyr::select(par4_dibn, par4_ditr, par4_dire) %>%
+  labelled::set_variable_labels(
+  par4_dibn = "Send to bedrooms when misbehaves",
+  par4_ditr = "Take away treats when misbehaves",
+  par4_dire = "Try to reason with her when misbehaves"
+)
+
+# Display summary for each variable
+parenting4 <- c("par4_dibn", "par4_ditr", "par4_dire")
+
+lapply(parenting4, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  print(summary(df8[[var_name]]))
+  tab1(df8[, var_name], main = var_name)
+})
+```
+
+
+Now, we can combine all parenting variables into one data frame:
+
+```{r}
+df_pa <- bind_rows(df7, df8)
+# Check dimensions
+dim(df_pa)
+```
+
+
+Finally, let's look at and recode the potential covariates:
+
+```{r}
+df_co <- merged_data %>%
+  mutate(
+    pared = case_when(
+      fdacaq00 == 96 ~ 0,
+      fdacaq00 == 95 | fdacaq00 == -1 ~ NA_real_,
+      TRUE ~ fdacaq00
+    ),
+    
+    race = case_when(
+      fd06e00 %in% c(-9, -1) ~ NA_real_,
+      fd06e00 == 1 ~ 1,
+      fd06e00 == 2 ~ 4,
+      fd06e00 %in% c(3, 4) ~ 2,
+      fd06e00 == 5 ~ 3,
+      fd06e00 == 6 ~ 4
+    ),
+    
+    gender6 = case_when(
+      fccsex00 == 2 ~ 0,
+      TRUE ~ 1
+    ),
+    
+    married = case_when(
+      amfcin00 %in% c(-9, -8, -1) ~ NA_real_,
+      amfcin00 %in% c(1, 4, 5, 6) ~ 0,
+      amfcin00 %in% c(2, 3) ~ 1
+    )
+  ) %>%
+  labelled::set_variable_labels(
+    pared = "Highest Parent's Education",
+    race = "Racial Categories",
+    gender6 = "Gender of CM",
+    married = "Marital Status at 9 month-old"
+  ) %>%
+  mutate(
+    race = factor(race, levels = c(1, 2, 3, 4), labels = c("White British", "Asian British", "Black British", "Other British")),
+    gender = factor(gender6, levels = c(0, 1), labels = c("Female", "Male"))
+  ) %>% 
+  dplyr::select(pared, race, gender, married)
+
+# Show frequency
+covar <- c("pared", "race", "gender", "married")
+
+lapply(covar, function(var_name) {
+  cat("\nVariable:", var_name, "\n")
+  print(summary(df_co[[var_name]]))
+  tab1(df_co[, var_name], main = var_name)
+  
+})
+```
+
+
+Finally, let's combine all the relevant columns into one data frame:
+
+```{r}
+df_re <- bind_rows(df_aggr, df_sc, df_co, df_pa)
+# Check dimensions
+dim(df_re)
+# Write it to r data file (uncomment when needed)
+## saveRDS(df_re, file = "/home/freeyang/research_data/mcs/merging/relevant_columns.rds")
+```
+
+
+## Potential Issues of Data
+
+From the above analysis we identified the following potential issues with our dataset:
+
+
+1. **Lots of missing cases**
+
+This is not uncommon when working with panel data. Most variables in wave 7 (age 17) have about 40%-50% missing. The missing cases are very likely to be related to attrition. However, we suggest careful missing value analysis before proceeding. 
+
+2. **Sample Unbalance**
+
+Another critical issue we identified from the above sections is the data unbalance issue. Most variables we plan to use are highly unbalanced. Specifically, most variables measuring adolescent aggressive behaviors are extremely unbalance. Some of the variables measuring adolescent aggressive behaviors only have about 2% positive cases. Unbalanced endogenous variables require special treatment in conventional SEM. How extremely unbalanced endogenous variables affect tree-based SEM also requires further attention. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
